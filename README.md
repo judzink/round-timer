@@ -1,36 +1,59 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 🥊 Boks Tajmer
 
-## Getting Started
+Jednostavan online tajmer za boks / intervalni trening. Radi u pregledaču, mobile-first, bez naloga i bez servera — sva logika je na klijentu.
 
-First, run the development server:
+## Mogućnosti
+
+- **Podesive runde:** broj rundi, trajanje runde, trajanje pauze (ili potpuno **bez pauze**)
+- **Glasovne najave** (ugrađeni glas pregledača, bez audio fajlova):
+  - „Spremi se" odbrojavanje pre prve runde
+  - „X sekundi" upozorenje pred kraj runde
+  - „Pauza" i „Kraj treninga"
+- **Zvono** na početku i kraju svake runde (3 zvona na kraju treninga) — sintetizovano preko Web Audio API-ja
+- **Jezik glasa:** srpski ili engleski (bira se u podešavanjima)
+- **Prekidači:** zvuk / glas / vibracija zasebno
+- **Kružni prsten + veliki brojevi**, boja menja fazu (žuta = spremi se, zelena = runda, crvena = poslednjih par sekundi, plava = pauza)
+- **Ekran ostaje upaljen** tokom treninga (Screen Wake Lock)
+- **Vibracija** na promene faze (telefon)
+- **Pauza / Preskoči / Stop** kontrole
+- Poslednja podešavanja se pamte (localStorage)
+
+## Pokretanje (razvoj)
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Otvori [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+> Zvuk i glas krену tek posle prvog klika na **START** (pregledači blokiraju automatski zvuk dok korisnik ne interaguje sa stranicom).
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Produkcija
 
-## Learn More
+```bash
+npm run build
+npm run start
+```
 
-To learn more about Next.js, take a look at the following resources:
+Najlakši deploy: push na GitHub → import na [Vercel](https://vercel.com/new). Pošto je sve na klijentu, može i bilo koji drugi hosting.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Struktura
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+| Putanja | Uloga |
+| --- | --- |
+| `app/page.tsx` | Glavni ekran — bira Podešavanja ili Tajmer |
+| `app/layout.tsx` | Root layout, dark tema, viewport |
+| `lib/types.ts` | Tipovi + podrazumevana konfiguracija |
+| `lib/useBoxingTimer.ts` | Srce aplikacije — state machine + precizan (timestamp) tajmer |
+| `lib/audio.ts` | Zvono (Web Audio) + glas (Web Speech) |
+| `lib/storage.ts` | Čuvanje/učitavanje podešavanja |
+| `components/SettingsScreen.tsx` | Ekran za podešavanje |
+| `components/TimerScreen.tsx` | Ekran tajmera (prsten + kontrole) |
+| `components/CircularRing.tsx` | SVG kružni prsten |
+| `components/Stepper.tsx` | +/− kontrola |
 
-## Deploy on Vercel
+## Napomene
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- **Srpski glas** nije instaliran na svim uređajima; ako ga nema, pregledač koristi podrazumevani glas. Zato zvono i vibracija nose glavni signal, a glas je dopuna. Engleski glas radi svuda.
+- Wake Lock i zvuk zahtevaju `https` ili `localhost`.
