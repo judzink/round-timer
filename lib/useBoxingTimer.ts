@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { bell, beep, cancelSpeech, speak, unlockAudio } from "./audio";
+import { bell, beep, cancelSpeech, ping, speak, unlockAudio } from "./audio";
 import type { Config, Phase, TimerState, VoiceLang } from "./types";
 
 const IDLE_STATE: TimerState = {
@@ -12,7 +12,7 @@ const IDLE_STATE: TimerState = {
   isPaused: false,
 };
 
-const TICK_MS = 200;
+const TICK_MS = 100;
 
 function phrase(
   lang: VoiceLang,
@@ -60,6 +60,7 @@ export function useBoxingTimer() {
   const warningFiredRef = useRef(false);
   const getReadyFiredRef = useRef(false);
   const lastTickSecRef = useRef(-1);
+  const nextPingAtRef = useRef(0);
 
   // ---- pomoćne (poštuju podešavanja) ----
   const playBell = (n = 1) => {
@@ -67,6 +68,9 @@ export function useBoxingTimer() {
   };
   const playBeep = (freq?: number, dur?: number) => {
     if (cfgRef.current?.soundEnabled) beep(freq, dur);
+  };
+  const playPing = (freq: number) => {
+    if (cfgRef.current?.soundEnabled) ping(freq);
   };
   const say = (text: string) => {
     const cfg = cfgRef.current;
@@ -119,6 +123,7 @@ export function useBoxingTimer() {
     warningFiredRef.current = false;
     getReadyFiredRef.current = false;
     lastTickSecRef.current = -1;
+    nextPingAtRef.current = 0;
 
     if (phase === "finished") {
       totalRef.current = 0;
@@ -146,6 +151,8 @@ export function useBoxingTimer() {
       vibrate(120);
     } else if (phase === "round") {
       playBell(1);
+      // Na početku SVAKE runde uvek "GO GO GO" na engleskom (bez obzira na jezik).
+      if (cfg.voiceEnabled) speak("Go go go", "en");
       vibrate([200, 80, 200]);
     } else if (phase === "rest") {
       say(phrase(cfg.voiceLang, "rest"));
@@ -193,18 +200,28 @@ export function useBoxingTimer() {
     let remaining = endsAtRef.current - Date.now();
     if (remaining < 0) remaining = 0;
 
-    // Upozorenje pred kraj runde.
+    // Ubrzavajući "ping" kroz poslednjih `warningSeconds` runde:
+    // razmak se smanjuje (sporo -> brzo), a ton raste — osećaj da se sprema kraj.
     if (
       phase === "round" &&
-      !warningFiredRef.current &&
       cfg.warningSeconds > 0 &&
       cfg.warningSeconds < cfg.roundSeconds &&
+      remaining > 0 &&
       remaining <= cfg.warningSeconds * 1000
     ) {
-      warningFiredRef.current = true;
-      say(phrase(cfg.voiceLang, "warning", cfg.warningSeconds));
-      playBeep(1000, 0.15);
-      vibrate([120, 60, 120]);
+      const windowMs = cfg.warningSeconds * 1000;
+      const nowMs = Date.now();
+      if (!warningFiredRef.current) {
+        warningFiredRef.current = true;
+        nextPingAtRef.current = 0; // prvi ping odmah
+      }
+      if (nowMs >= nextPingAtRef.current) {
+        const frac = remaining / windowMs; // 1 -> 0 kako se bliži kraj
+        playPing(800 + (1 - frac) * 700); // 800 -> 1500 Hz
+        const gap = Math.min(900, Math.max(120, remaining / 10)); // razmak se smanjuje
+        nextPingAtRef.current = nowMs + gap;
+        if (remaining <= 3000) vibrate(40); // sitna vibracija u finišu
+      }
     }
 
     // "Spremi se" pred kraj pauze.

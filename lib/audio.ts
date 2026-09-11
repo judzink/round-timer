@@ -100,6 +100,23 @@ export function beep(freq = 1000, duration = 0.12): void {
   osc.stop(now + duration + 0.02);
 }
 
+/** Kratak "ping" (sinus, brz decay) — za ubrzavajuće odbrojavanje pred kraj runde. */
+export function ping(freq = 1000): void {
+  const c = getCtx();
+  if (!c) return;
+  const now = c.currentTime;
+  const osc = c.createOscillator();
+  osc.type = "sine";
+  osc.frequency.value = freq;
+  const g = c.createGain();
+  g.gain.setValueAtTime(0.0001, now);
+  g.gain.exponentialRampToValueAtTime(0.4, now + 0.004);
+  g.gain.exponentialRampToValueAtTime(0.0001, now + 0.13);
+  osc.connect(g).connect(c.destination);
+  osc.start(now);
+  osc.stop(now + 0.15);
+}
+
 // ---- Glas (Web Speech API) ----
 
 let cachedVoices: SpeechSynthesisVoice[] = [];
