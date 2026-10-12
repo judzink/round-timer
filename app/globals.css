@@ -27,3 +27,17 @@ body {
 button {
   touch-action: manipulation;
 }
+
+/* Blinkanje crvenog preko celog ekrana u poslednjim sekundama runde */
+@keyframes redBlink {
+  0%,
+  100% {
+    opacity: 0;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}
+.red-blink {
+  animation: redBlink 0.55s ease-in-out infinite;
+}

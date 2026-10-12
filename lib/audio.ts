@@ -117,6 +117,30 @@ export function ping(freq = 1000): void {
   osc.stop(now + 0.15);
 }
 
+/** Kratak "air-horn" (dva silazna tona) — distinktivan marker ulaska u završnih N s. */
+export function horn(): void {
+  const c = getCtx();
+  if (!c) return;
+  const now = c.currentTime;
+  const tones: Array<[number, number, number]> = [
+    [0, 0.26, 392],
+    [0.3, 0.52, 311],
+  ];
+  for (const [s, e, f] of tones) {
+    const osc = c.createOscillator();
+    osc.type = "sawtooth";
+    osc.frequency.value = f;
+    const g = c.createGain();
+    g.gain.setValueAtTime(0.0001, now + s);
+    g.gain.exponentialRampToValueAtTime(0.45, now + s + 0.02);
+    g.gain.setValueAtTime(0.45, now + e - 0.04);
+    g.gain.exponentialRampToValueAtTime(0.0001, now + e);
+    osc.connect(g).connect(c.destination);
+    osc.start(now + s);
+    osc.stop(now + e + 0.02);
+  }
+}
+
 // ---- Glas (Web Speech API) ----
 
 let cachedVoices: SpeechSynthesisVoice[] = [];

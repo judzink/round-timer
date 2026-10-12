@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { bell, beep, cancelSpeech, ping, speak, unlockAudio } from "./audio";
+import { bell, beep, cancelSpeech, horn, ping, speak, unlockAudio } from "./audio";
 import type { Config, Phase, TimerState, VoiceLang } from "./types";
 
 const IDLE_STATE: TimerState = {
@@ -71,6 +71,9 @@ export function useBoxingTimer() {
   };
   const playPing = (freq: number) => {
     if (cfgRef.current?.soundEnabled) ping(freq);
+  };
+  const playHorn = () => {
+    if (cfgRef.current?.soundEnabled) horn();
   };
   const say = (text: string) => {
     const cfg = cfgRef.current;
@@ -214,6 +217,7 @@ export function useBoxingTimer() {
       if (!warningFiredRef.current) {
         warningFiredRef.current = true;
         nextPingAtRef.current = 0; // prvi ping odmah
+        playHorn(); // distinktivan signal na ulasku u završnih N s
       }
       if (nowMs >= nextPingAtRef.current) {
         const frac = remaining / windowMs; // 1 -> 0 kako se bliži kraj
